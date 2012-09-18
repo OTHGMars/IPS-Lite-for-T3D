@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
-// Torque
-// Copyright GarageGames, LLC 2011
+// IPS Lite
+// @Author Lukas Joergensen, Fuzzy Void Studio 2012
 //-----------------------------------------------------------------------------
 
 #ifndef _GRAPH_EMITTERNODE_H_
