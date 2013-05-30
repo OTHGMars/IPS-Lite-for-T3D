@@ -1410,15 +1410,11 @@ void MeshEmitter::addParticle(const F32 &vel)
 	F32 initialVel = ejectionVelocity;
 	initialVel    += (velocityVariance * 2.0f * gRandGen.randF()) - velocityVariance;
 
-	// Set the time since this code was last run
-	U32 dt = mInternalClock - oldTime;
-	oldTime = mInternalClock;
-
 	// Check if the emitMesh matches a name
-	SimObject* SB = dynamic_cast<SimObject*>(Sim::findObject(emitMesh));
+	SceneObject* SB = dynamic_cast<SceneObject*>(Sim::findObject(emitMesh));
 	// If not then check if it matches an ID
 	if(!SB)
-		SB = dynamic_cast<SimObject*>(Sim::findObject(atoi(emitMesh)));
+		SB = dynamic_cast<SceneObject*>(Sim::findObject(atoi(emitMesh)));
 	// Make sure that we are dealing with some proper objects
 	if(dynamic_cast<GameBase*>(SB) || dynamic_cast<TSStatic*>(SB)){
 		// Seed the random generator - this should maybe be swapped out in favor for the gRandGen.
@@ -1453,8 +1449,7 @@ void MeshEmitter::addParticle(const F32 &vel)
 			{
 				for (S32 meshIndex = 0; meshIndex < shape->meshes.size(); meshIndex++)
 				{
-
-					if(!shape->meshes[meshIndex])
+                    if(!shape->meshes[meshIndex])
 						continue;
 
 					TSSkinMesh* sMesh = dynamic_cast<TSSkinMesh*>(shape->meshes[meshIndex]);
@@ -1552,6 +1547,8 @@ void MeshEmitter::addParticle(const F32 &vel)
 			bool skinmesh = false;
 			for(meshIndex = 0; meshIndex < shape->meshes.size(); meshIndex++)
 			{
+                if(!shape->meshes[meshIndex])
+                    continue;
 				sMesh = dynamic_cast<TSSkinMesh*>(shape->meshes[meshIndex]);
 				if(sMesh)
 				{
@@ -1571,6 +1568,8 @@ void MeshEmitter::addParticle(const F32 &vel)
 				//  - being as linear as it is with per vertex.
 				meshIndex = rand() % shape->meshes.size();
 				Mesh = shape->meshes[meshIndex];
+                if(!Mesh) continue;
+                
 				if(Mesh)
 					accepted = true;
 				if(skinmesh)
@@ -1621,7 +1620,7 @@ void MeshEmitter::addParticle(const F32 &vel)
 								// Get a random primitive
 								S32 primIndex = rand() % numPrims;
 								S32 start = sMesh->primitives[primIndex].start;
-								S16 numElements = sMesh->primitives[primIndex].numElements;
+								S32 numElements = sMesh->primitives[primIndex].numElements;
 
 								// Define some variables we will use later
 								TSMesh::__TSMeshVertexBase v1, v2, v3;
@@ -1640,7 +1639,7 @@ void MeshEmitter::addParticle(const F32 &vel)
 									//  - due to some rendering thing, every other triangle is 
 									//  - counter clock wise. Read about it in the official DX9 docs.
 									U8 indiceBool = (triStart * 3) % 2;
-									if(indiceBool = 0)
+									if(indiceBool == 0)
 									{
 										v1 = sMesh->mVertexData[sMesh->indices[start + (triStart*3)]];
 										v2 = sMesh->mVertexData[sMesh->indices[start + (triStart*3) + 1]];
@@ -1738,7 +1737,7 @@ void MeshEmitter::addParticle(const F32 &vel)
 						{
 							S32 primIndex = rand() % numPrims;
 							S32 start = Mesh->primitives[primIndex].start;
-							S16 numElements = Mesh->primitives[primIndex].numElements;
+							S32 numElements = Mesh->primitives[primIndex].numElements;
 
 							TSMesh::__TSMeshVertexBase v1, v2, v3;
 							Point3F vp1;
@@ -1748,7 +1747,7 @@ void MeshEmitter::addParticle(const F32 &vel)
 								coHandled = true;
 								U32 triStart = (rand() % (numElements/3));
 								U8 indiceBool = (triStart * 3) % 2;
-								if(indiceBool = 0)
+								if(indiceBool == 0)
 								{
 									v1 = Mesh->mVertexData[Mesh->indices[start + (triStart*3)]];
 									v2 = Mesh->mVertexData[Mesh->indices[start + (triStart*3) + 1]];
@@ -1833,13 +1832,14 @@ void MeshEmitter::addParticle(const F32 &vel)
 					S32 faceIndex = rand() % emitfaces.size();
 					face tris = emitfaces[faceIndex];
 					Mesh = shape->meshes[tris.meshIndex];
+
 					TSMesh::__TSMeshVertexBase v1, v2, v3;
 					Point3F p1, p2, p3;
 					if(tris.skinMesh)
 					{
 						sMesh = dynamic_cast<TSSkinMesh*>(Mesh);
 						U8 indiceBool = tris.triStart % 2;
-						if(indiceBool = 0)
+						if(indiceBool == 0)
 						{
 							v1 = sMesh->mVertexData[sMesh->indices[tris.triStart]];
 							v2 = sMesh->mVertexData[sMesh->indices[tris.triStart + 1]];
@@ -1857,7 +1857,7 @@ void MeshEmitter::addParticle(const F32 &vel)
 					}
 					else{
 						U8 indiceBool = tris.triStart % 2;
-						if(indiceBool = 0)
+						if(indiceBool == 0)
 						{
 							v1 = Mesh->mVertexData[Mesh->indices[tris.triStart]];
 							v2 = Mesh->mVertexData[Mesh->indices[tris.triStart + 1]];
@@ -2008,11 +2008,11 @@ bool MeshEmitter::isObjectCulled()
 
 	// Collision info. We're going to be running LOS tests and we
 	// don't want to collide with the control object.
-	static U32 losMask = TerrainObjectType | InteriorObjectType | ShapeBaseObjectType;
+	static U32 losMask = TerrainObjectType | ShapeBaseObjectType;
 
-	SimObject* SB = dynamic_cast<SimObject*>(Sim::findObject(emitMesh));
+	SceneObject* SB = dynamic_cast<SceneObject*>(Sim::findObject(emitMesh));
 	if(!SB)
-		SB = dynamic_cast<SimObject*>(Sim::findObject(atoi(emitMesh)));
+		SB = dynamic_cast<SceneObject*>(Sim::findObject(atoi(emitMesh)));
 
 	// All ghosted objects are added to the server connection group,
 	// so we can find all the shape base objects by iterating through
@@ -2309,7 +2309,7 @@ void MeshEmitter::update( U32 ms )
 		// added part ----------------
 		// Not sure if collision will ever have any use on a mesh particle emitter.
 		/*RayInfo rInfo;
-		if(gClientContainer.castRay(part->pos, part->pos + part->vel * t, TerrainObjectType | InteriorObjectType | VehicleObjectType | PlayerObjectType, &rInfo))
+		if(gClientContainer.castRay(part->pos, part->pos + part->vel * t, TerrainObjectType | VehicleObjectType | PlayerObjectType, &rInfo))
 		{
 			Point3F proj = mDot(part->vel,rInfo.normal)/(rInfo.normal.len()*rInfo.normal.len())*rInfo.normal;
 			Point3F between = (part->vel - proj);
@@ -2909,7 +2909,12 @@ U32 MeshEmitter::packUpdate(NetConnection* con, U32 mask, BitStream* stream)
 
 	if( stream->writeFlag( mask & meshEmitterMask ) )
 	{
-		stream->writeString(emitMesh);
+        SceneObject* SB = dynamic_cast<SceneObject*>(Sim::findObject(emitMesh));
+        if(!SB) SB = dynamic_cast<SceneObject*>(Sim::findObject(atoi(emitMesh)));
+        S32 gIndex = con->getGhostIndex(SB);
+        if (stream->writeFlag(gIndex != -1))
+            stream->writeInt(gIndex,NetConnection::GhostIdBitSize);
+
 		stream->write(evenEmission);
 		stream->write(emitOnFaces);
 	}
@@ -2975,9 +2980,12 @@ void MeshEmitter::unpackUpdate(NetConnection* con, BitStream* stream)
 	// Meshemitter mask
 	if ( stream->readFlag() )
 	{
-		char buf[256];
-		stream->readString(buf);
-		emitMesh = dStrdup(buf);
+        if (stream->readFlag()) {
+            S32 gIndex = stream->readInt(NetConnection::GhostIdBitSize);
+            SceneObject* obj = static_cast<SceneObject*>(con->resolveGhost(gIndex));
+            if (obj) emitMesh = obj->getIdString();
+            else emitMesh = "";
+        }
 		loadFaces();
 		stream->read(&evenEmission);
 		stream->read(&emitOnFaces);
@@ -3136,9 +3144,9 @@ void MeshEmitter::loadFaces()
 {
 	emitfaces.clear();
 	vertexCount = 0;
-	SimObject* SB = dynamic_cast<SimObject*>(Sim::findObject(emitMesh));
+	SceneObject* SB = dynamic_cast<SceneObject*>(Sim::findObject(emitMesh));
 	if(!SB)
-		SB = dynamic_cast<SimObject*>(Sim::findObject(atoi(emitMesh)));
+		SB = dynamic_cast<SceneObject*>(Sim::findObject(atoi(emitMesh)));
 	if(dynamic_cast<GameBase*>(SB) || dynamic_cast<TSStatic*>(SB)){
 		ShapeBase* SS = dynamic_cast<ShapeBase*>(SB);
 		TSShapeInstance* shape;
@@ -3148,10 +3156,11 @@ void MeshEmitter::loadFaces()
 			shape = (dynamic_cast<TSStatic*>(SB))->getShapeInstance();
 		}
 		std::vector<face> triangles/* = *new std::vector<float>()*/;
-		U32 trisIndex = 0;
 		bool skinmesh = false;
 		for(S32 meshIndex = 0; meshIndex < shape->getShape()->meshes.size(); meshIndex++)
 		{
+            if(!shape->getShape()->meshes[meshIndex])
+                continue;
 			//Mesh = shape->getShape()->meshes[meshIndex];
 			TSSkinMesh* sMesh = dynamic_cast<TSSkinMesh*>(shape->getShape()->meshes[meshIndex]);
 			if(sMesh)
@@ -3164,6 +3173,8 @@ void MeshEmitter::loadFaces()
 		}
 		for (S32 meshIndex = 0; meshIndex < shape->getShape()->meshes.size(); meshIndex++)  
 		{
+            if(!shape->getShape()->meshes[meshIndex])
+                continue;
 			TSSkinMesh* sMesh;
 			TSMesh* Mesh;
 
@@ -3211,7 +3222,7 @@ void MeshEmitter::loadFaces()
 						TSMesh::__TSMeshVertexBase v1, v2, v3;
 						Point3F p1, p2, p3;
 
-						for (S16 triIndex = 0; triIndex < numElements; triIndex+=3)
+						for (S32 triIndex = 0; triIndex < numElements; triIndex+=3)
 						{
 							U32 triStart = start + triIndex;
 							v1 = sMesh->mVertexData[sMesh->indices[triStart]];
@@ -3265,15 +3276,15 @@ void MeshEmitter::loadFaces()
 					continue;
 				for( S32 primIndex = 0; primIndex < numPrims; primIndex++ )
 				{
-					S16 start = Mesh->primitives[primIndex].start;
-					S16 numElements = Mesh->primitives[primIndex].numElements;
+					S32 start = Mesh->primitives[primIndex].start;
+					S32 numElements = Mesh->primitives[primIndex].numElements;
 
 					if ( (Mesh->primitives[primIndex].matIndex & TSDrawPrimitive::TypeMask) == TSDrawPrimitive::Triangles) 
 					{
 						TSMesh::__TSMeshVertexBase v1, v2, v3;
 						Point3F p1, p2, p3;
 						
-						for (S16 triIndex = 0; triIndex < numElements; triIndex+=3)
+						for (S32 triIndex = 0; triIndex < numElements; triIndex+=3)
 						{
 							U32 triStart = start + triIndex;
 							v1 = Mesh->mVertexData[Mesh->indices[triStart]];
