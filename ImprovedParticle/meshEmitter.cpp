@@ -2911,9 +2911,12 @@ U32 MeshEmitter::packUpdate(NetConnection* con, U32 mask, BitStream* stream)
 	{
         SceneObject* SB = dynamic_cast<SceneObject*>(Sim::findObject(emitMesh));
         if(!SB) SB = dynamic_cast<SceneObject*>(Sim::findObject(atoi(emitMesh)));
-        S32 gIndex = con->getGhostIndex(SB);
+        S32 gIndex = SB ? con->getGhostIndex(SB) : -1;
         if (stream->writeFlag(gIndex != -1))
             stream->writeInt(gIndex,NetConnection::GhostIdBitSize);
+        else if (SB)
+            // The mesh we're attached to has not ghosted yet. Will have to try again later
+            retMask |= meshEmitterMask;
 
 		stream->write(evenEmission);
 		stream->write(emitOnFaces);
